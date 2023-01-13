@@ -25,6 +25,10 @@ public class Init_Plugin {
         try{
             InitJson("tcp.json");
         }catch (Exception ex) { logger.error("InitJson　ERROR　... ", ex); }
+
+        try{
+            InitJson("config.json");
+        }catch (Exception ex) { logger.error("InitJson ERROR ... ", ex); }
     }
 
     private static void InitFiles() throws IOException {
@@ -35,18 +39,36 @@ public class Init_Plugin {
         if(!Files.exists(Path.of(dataDirectory + "/tcp.json"))) {
             Files.createFile(Path.of(dataDirectory + "/tcp.json"));
         }
+
+        if(!Files.exists(Path.of(dataDirectory + "/whitelist.json"))){
+            Files.createFile(Path.of(dataDirectory + "/whitelist.json"));
+        }
+
+        if(!Files.exists(Path.of(dataDirectory + "/config.json"))){
+            Files.createFile(Path.of(dataDirectory + "/config.json"));
+        }
     }
 
     private static void InitJson(String jsonName) throws IOException {
         Path Jsonpath = Path.of(dataDirectory + "/" + jsonName);
         String SJson = Files.readString(Jsonpath);
 
-        if(SJson.equals("")){
-            ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
+
+        if(jsonName.equals("tcp.json") && SJson.equals("")){
             Map<String,String> map = new HashMap<>();
             map.put("Port","6001");
 
             writeStringToFile(mapper.writeValueAsString(map),new File(Jsonpath.toString()));
+            return;
+        }
+
+        if(jsonName.equals("config.json") && SJson.equals("")){
+            Map<String, Object> map = new HashMap<>();
+            map.put("DisconnectMessage", "Sorry you don't have access permission.");
+
+            writeStringToFile(mapper.writeValueAsString(map),new File(Jsonpath.toString()));
+            return;
         }
     }
 
