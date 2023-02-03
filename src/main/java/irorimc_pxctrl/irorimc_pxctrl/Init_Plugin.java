@@ -9,7 +9,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Init_Plugin {
@@ -28,6 +30,10 @@ public class Init_Plugin {
 
         try{
             InitJson("config.json");
+        }catch (Exception ex) { logger.error("InitJson ERROR ... ", ex); }
+
+        try {
+            InitJson("whitelist.json");
         }catch (Exception ex) { logger.error("InitJson ERROR ... ", ex); }
     }
 
@@ -68,6 +74,13 @@ public class Init_Plugin {
             map.put("DisconnectMessage", "Sorry you don't have access permission.");
 
             writeStringToFile(mapper.writeValueAsString(map),new File(Jsonpath.toString()));
+            return;
+        }
+
+        if(jsonName.equals("whitelist.json") && SJson.equals("")) {
+            List<Map<String, Object>> mapList = new ArrayList<Map<String , Object>>() {};
+
+            writeStringToFile(mapper.writeValueAsString(mapList), new File(Jsonpath.toString()));
             return;
         }
     }

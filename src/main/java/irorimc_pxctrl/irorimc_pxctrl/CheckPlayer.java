@@ -16,14 +16,18 @@ public class CheckPlayer {
 
         try {
             ObjectMapper mapper = new ObjectMapper();
-            List<Map<String, Object>> playerList = mapper.readValue(WhiteList, new TypeReference<List<Map<String, Object>>>() {
-            });
+            List<Map<String, Object>> playerList = mapper.readValue(WhiteList, new TypeReference<List<Map<String, Object>>>() {});
+
+            logger.info(String.valueOf(map));
+            logger.info("");
 
             for (Map<String, Object> player : playerList) {
-                if(map.equals(player))
+                if(map.get("id").equals(player.get("id")))
                 {
                     return true;
                 }
+
+                logger.info(String.valueOf(player));
             }
         }catch (Exception ex) { logger.error("Check error ... ",ex);}
 

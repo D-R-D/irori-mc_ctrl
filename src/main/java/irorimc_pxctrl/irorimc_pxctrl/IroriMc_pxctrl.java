@@ -1,6 +1,5 @@
 package irorimc_pxctrl.irorimc_pxctrl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.LoginEvent;
@@ -11,11 +10,10 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import net.kyori.adventure.text.Component;
+import org.geysermc.floodgate.api.FloodgateApi;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 
@@ -25,20 +23,22 @@ import java.util.Map;
         version = "1.0-SNAPSHOT"
 )
 public class IroriMc_pxctrl {
-    private final ProxyServer server;
-    private final Logger logger;
-    private final  Path dataDirectory;
-    private String WhiteList;
+    private static ProxyServer server;
+    private static Logger logger;
+    private final Path dataDirectory;
+    private final FloodgateApi floodgateApi;
+
+    public static String WhiteList;
     private Map<String, Object> configMap;
+    private Tcp_Console tcp_console;
 
     @Inject
     public IroriMc_pxctrl(ProxyServer server, Logger logger,@DataDirectory Path dataDirectory) {
         this.server = server;
         this.logger = logger;
         this.dataDirectory = dataDirectory;
-
+        this.floodgateApi = FloodgateApi.getInstance();
         logger.info("WorkingDir : " + dataDirectory.toString());
-        logger.info("Hello there! I made my first plugin with Velocity.");
     }
 
     @Subscribe
@@ -47,31 +47,39 @@ public class IroriMc_pxctrl {
         WhitelistLoad();
         ConfigLoad();
         ConStart();
+
+        logger.info(WhiteList);
     }
 
+    //tcp接続を開始する
     public void ConStart() {
         logger.info("ConStart");
         new Thread(()-> {
             try {
                 Map<String,Object> jsonObject = ConfigFile.ReadAsMap(dataDirectory, "tcp.json");
-                Tcp_Console con = new Tcp_Console();
+                tcp_console = new Tcp_Console();
 
-                con.SetSocketAndInit(Integer.parseInt((String) jsonObject.get("Port")), dataDirectory);
-                con.StartAccept();
+                tcp_console.Init(dataDirectory, server);
+                tcp_console.SetSocket(Integer.parseInt((String) jsonObject.get("Port")));
+                tcp_console.StartAccept();
             } catch (Exception ex) {
                 logger.error("ConStart ERROR ... ",ex);
             }
         }).start();
     }
 
+    //ホワイトリストをロードする
     public void WhitelistLoad(){
         logger.info("whitelist loading...");
         try {
-            WhiteList = ConfigFile.ReadAsString(dataDirectory, "whitelist.json");
+            WhitelistSerializer whitelistSerializer = new WhitelistSerializer();
+            whitelistSerializer.LoadWhitelist(dataDirectory);
+            whitelistSerializer.ApplyLatestWhitelist();
             logger.info("whitelist loaded!!");
         }catch (Exception ex){ logger.error("Whitelist Load Failed ... " , ex); }
     }
 
+    //コンフィグファイルをロードする
     public void ConfigLoad() {
         logger.info("ConfigLoad start ... ");
         try {
@@ -80,11 +88,22 @@ public class IroriMc_pxctrl {
         }catch (Exception ex) { logger.error("Config load Failed ... " , ex); }
     }
 
+    public static void Alert(String msg){
+        logger.info("[Alert]: " + msg);
+        server.getAllServers().forEach(sv -> sv.sendMessage(Component.text(msg)));
+    }
+
     @Subscribe
     public void onLoginEvent(LoginEvent login) {
-        logger.info("PlayerName:[" + login.getPlayer().getUsername() + "] UUID:[" + String.valueOf(login.getPlayer().getUniqueId()) + "]");
         if (!CheckPlayer.Check(login.getPlayer().getUsername(), String.valueOf(login.getPlayer().getUniqueId()), WhiteList)) {
+            if(floodgateApi.isFloodgatePlayer(login.getPlayer().getUniqueId())){
+                logger.info("be player login.");
+                tcp_console.SetOrder("");
+                return;
+            }
+            logger.info("不届き者のプレイヤー["+ login.getPlayer().getUsername() + "]は我らがフィルタープラグインにブロックされました。ざまあみろ！！ﾍﾟｯ!!");
             login.getPlayer().disconnect(Component.text(configMap.get("DisconnectMessage").toString()));
+            server.getAllServers().forEach(sv -> sv.sendMessage(Component.text("不届き者のプレイヤー["+ login.getPlayer().getUsername() + "]はホワイトリストの前に散っていきました。")));
         }
     }
 
@@ -96,21 +115,6 @@ public class IroriMc_pxctrl {
 
     @Subscribe
     public void onPlayerChatEvent(PlayerChatEvent playerchat){
-
-        Map<String,Object> map = GetObjectFromJson.GetObjectFromJson(MinecraftApi.getPlayerJsonFromName(playerchat.getPlayer().getUsername()));
-
-        if(map != null) {
-            ObjectMapper mapper = new ObjectMapper();
-            List<Map<String, Object>> mapList = new ArrayList<>() {};
-
-            mapList.add(map);
-            mapList.add(map);
-
-            try {
-                logger.info("\n"+ mapper.writeValueAsString(mapList));
-            }catch (Exception ex) { logger.error("onPlayerChatEvent mapper.writeValueAsString ...", ex); }
-        } else { logger.info("map is null."); }
-        logger.info("player chat event");
-        server.getAllServers().forEach(sv -> sv.sendMessage(Component.text("")));
+        server.getConsoleCommandSource().sendMessage(Component.text("これはテスト送信です。"));
     }
 }

@@ -1,5 +1,6 @@
 package irorimc_pxctrl.irorimc_pxctrl;
 
+import com.velocitypowered.api.proxy.ProxyServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +19,7 @@ import java.util.Deque;
 public class Tcp_Console {
     private static final Logger logger = LoggerFactory.getLogger("irori-mc_pxctrl.Tcp_Console");
     private static Path dataDirectory;
+    private static ProxyServer server;
 
     //クライアントとの接続情報を持つクラス
     private static class SocketItem {
@@ -32,10 +34,14 @@ public class Tcp_Console {
     private final Deque<String> Orders = new ArrayDeque<>();
     private ServerSocket svsock;
 
-    //サーバーソケットを作成する
-    public void SetSocketAndInit(int port, Path dataDir) throws IOException {
-        svsock = new ServerSocket(port);
+    public void Init(Path dataDir, ProxyServer serv){
         dataDirectory = dataDir;
+        server = serv;
+    }
+
+    //サーバーソケットを作成する
+    public void SetSocket(int port) throws IOException {
+        svsock = new ServerSocket(port);
 
         logger.info("Starting Server at Port[" + port + "]");
     }
@@ -85,13 +91,17 @@ public class Tcp_Console {
                 ConItem.inputStream = in;
                 ConItem.outputStream = out;
 
-                new Thread(() -> Receive(ConItem)).start();
+                new Thread(() -> {
+                    try {
+                        Receive(ConItem);
+                    }catch (Exception ex) { logger.error("UNKNOWN ERROR." ,ex); }
+                }).start();
 
                 Connections.add(ConItem);
 
                 logger.info("Connection Accepted [client name : " + ConItem.ClientName + "]");
             }catch (Exception ex) {
-                logger.error("Accept ERROR ... " , ex);
+                logger.error("Accept ERROR." , ex);
             }
         }).start();
 
@@ -115,13 +125,7 @@ public class Tcp_Console {
             data = Arrays.copyOf(data, readSize);
             String content = new String(data, StandardCharsets.UTF_8);
 
-            new Thread(() -> {
-                try {
-                    CommandRunner.Command(content, dataDirectory);
-                } catch (IOException e) {
-                    logger.error("CommandRunner Error ... ",e);
-                }
-            }).start();
+            CommandRunner.Command(content, dataDirectory);
 
         }catch (Exception ex){
             logger.error("Receive ERROR ... ", ex);
