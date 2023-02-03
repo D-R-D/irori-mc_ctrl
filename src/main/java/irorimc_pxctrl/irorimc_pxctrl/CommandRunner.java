@@ -7,11 +7,11 @@ import java.nio.file.Path;
 
 public class CommandRunner {
     private static final Logger logger = LoggerFactory.getLogger("irori-mc_pxctrl.CommandRunner");
-    public static void Command(String command, Path dataDirectory){
+    public static void Command(String command, Path dataDirectory, String clientName){
         String firstsplit = command.split(":")[0];
 
         if(firstsplit.equals("alert")){ //alert:clientname:content
-            Alert(command);
+            Alert(command, clientName);
             return;
         }
 
@@ -25,10 +25,10 @@ public class CommandRunner {
         }
     }
 
-    private static void Alert(String command){
+    private static void Alert(String command, String clientName){
         String[] split = command.split(":");
 
-        IroriMc_pxctrl.Alert(split[1] + ": " + split[2]);
+        IroriMc_pxctrl.Alert("[" + clientName + "]: " + split[1]);
     }
 
     private static void Container(String command, Path dataDirectory) {

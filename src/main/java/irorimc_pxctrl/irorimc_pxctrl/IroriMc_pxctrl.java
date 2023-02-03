@@ -59,7 +59,7 @@ public class IroriMc_pxctrl {
                 Map<String,Object> jsonObject = ConfigFile.ReadAsMap(dataDirectory, "tcp.json");
                 tcp_console = new Tcp_Console();
 
-                tcp_console.Init(dataDirectory, server);
+                tcp_console.Init(dataDirectory);
                 tcp_console.SetSocket(Integer.parseInt((String) jsonObject.get("Port")));
                 tcp_console.StartAccept();
             } catch (Exception ex) {
@@ -89,7 +89,7 @@ public class IroriMc_pxctrl {
     }
 
     public static void Alert(String msg){
-        logger.info("[Alert]: " + msg);
+        logger.info(msg);
         server.getAllServers().forEach(sv -> sv.sendMessage(Component.text(msg)));
     }
 

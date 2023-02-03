@@ -19,7 +19,6 @@ import java.util.Deque;
 public class Tcp_Console {
     private static final Logger logger = LoggerFactory.getLogger("irori-mc_pxctrl.Tcp_Console");
     private static Path dataDirectory;
-    private static ProxyServer server;
 
     //クライアントとの接続情報を持つクラス
     private static class SocketItem {
@@ -34,9 +33,8 @@ public class Tcp_Console {
     private final Deque<String> Orders = new ArrayDeque<>();
     private ServerSocket svsock;
 
-    public void Init(Path dataDir, ProxyServer serv){
+    public void Init(Path dataDir){
         dataDirectory = dataDir;
-        server = serv;
     }
 
     //サーバーソケットを作成する
@@ -125,7 +123,7 @@ public class Tcp_Console {
             data = Arrays.copyOf(data, readSize);
             String content = new String(data, StandardCharsets.UTF_8);
 
-            CommandRunner.Command(content, dataDirectory);
+            CommandRunner.Command(content, dataDirectory, ConItem.ClientName);
 
         }catch (Exception ex){
             logger.error("Receive ERROR ... ", ex);

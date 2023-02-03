@@ -49,7 +49,7 @@ public class WhitelistSerializer {
             ConfigFile.WriteObject(dataDirectory, "whitelist.json", whitelist);
             LoadWhitelist(dataDirectory);
             ApplyLatestWhitelist();
-            logger.info("指定されたプレイヤーをホワイトリストに対かしました。");
+            logger.info("指定されたプレイヤーをホワイトリストに追加しました。");
         }catch (Exception ex) { logger.error("WhiteListAdd failed.",ex); }
     }
 
